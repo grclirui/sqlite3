@@ -1,0 +1,15 @@
+#
+get_filename_component(SQLITE3_CONFIG_DIR
+  "${CMAKE_CURRENT_LIST_FILE}" PATH
+  )
+
+#
+set(SQLITE3_INCLUDE_DIR
+  "${SQLITE3_CONFIG_DIR}/../../include/sqlite3"
+  )
+set(SQLITE3_LIBRARY_DIR
+  "${SQLITE3_CONFIG_DIR}"
+  )
+set(SQLITE3_USE_FILE
+  "${SQLITE3_CONFIG_DIR}/Usesqlite3.cmake"
+  )
