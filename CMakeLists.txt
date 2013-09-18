@@ -78,6 +78,19 @@ else()
 	message(FATAL_ERROR "either static or dynamic option should be selected")
 endif()
 
+#
+# Apply user-defined properties to the library target.
+#
+if (SQLITE3_LIBRARY_PROPERTIES)
+  set_target_properties(${lib_name} PROPERTIES ${SQLITE3_LIBRARY_PROPERTIES})
+endif()
+
+#
+# export target
+#
+set(${PROJECT_NAME}_TARGETS ${lib_name} CACHE INTERNAL "${PROJECT_NAME} targets" FORCE)
+export(TARGETS ${lib_name} FILE ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Targets.cmake)
+
 # installation
 list(APPEND TO_INSTALL shell)
 if(SQLITE_BUILD_SHARED)
