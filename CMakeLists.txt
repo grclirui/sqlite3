@@ -93,4 +93,16 @@ install(TARGETS ${TO_INSTALL}
         LIBRARY DESTINATION "${INSTALL_LIB_DIR}" )
 install(FILES ${HDR_FILES} DESTINATION "${INSTALL_INC_DIR}")
 
+#install support files
+if (NOT ${PROJECT_NAME}_INSTALL_NO_DEVELOPMENT)
+  install(FILE
+    ${CMAKE_CURRENT_BINARY_DIR}/UsePythonCppAPI.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/install/PythonCppAPIConfig.cmake
+    DESTINATION lib/${lib_name} COMPONENT Development)
+endif()
+
+ #
+include(Generatesqlite3Config.cmake)
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/Usesqlite3.cmake.in
+  ${CMAKE_CURRENT_BINARY_DIR}/UsePythonCppAPI.cmake COPYONLY)
 
