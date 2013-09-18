@@ -3,24 +3,19 @@
 #--------------------------------------------
 cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
 
-set(PROJECT_NAME sqlite)
+set(PROJECT_NAME sqlite3)
 
 # define project for C language
 project(${PROJECT_NAME} C)
 
-message("Building on: ${CMAKE_SYSTEM_NAME}")
+if (NOT DEFINED BUILD_SHARED_LIBS)
+  option(BUILD_SHARED "Build SQLite shared library" ON)
+endif()
 
-option(SQLITE_BUILD_STATIC "Build SQLite static library" ON)
-option(SQLITE_BUILD_SHARED "Build SQLite shared library" ON)
-
-set(INSTALL_BIN_DIR "${CMAKE_INSTALL_PREFIX}/bin" CACHE PATH "Installation directory for executables")
-set(INSTALL_LIB_DIR "${CMAKE_INSTALL_PREFIX}/lib" CACHE PATH "Installation directory for libraries")
-set(INSTALL_INC_DIR "${CMAKE_INSTALL_PREFIX}/include" CACHE PATH "Installation directory for headers")
-
-set(SQLITE_WIN_BUILD OFF)
+set(WIN_BUILD OFF)
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-	set(SQLITE_WIN_BUILD ON)
+	set(WIN_BUILD ON)
 endif()
 
 # ---------------------
@@ -41,48 +36,60 @@ endif()
 
 message("FOUND: SQLite version = ${SQLITE_VER_STRING}")
 
-set(SQLITE_DYN_NAME "${PROJECT_NAME}${SQLITE_VER_MAJOR}")
-set(SQLITE_STATIC_NAME "${SQLITE_DYN_NAME}-static")
+set(lib_name "${PROJECT_NAME}")
+
+foreach (type LIBRARY RUNTIME ARCHIVE)
+  if (DEFINED sqlite3_CMAKE_${type}_OUTPUT_DIRECTORY
+      AND NOT EXISTS ${sqlite3_CMAKE_${type}_OUTPUT_DIRECTORY})
+    message(FATAL_ERROR "sqlite3_CMAKE_${type}_OUTPUT_DIRECTORY is set to non existing directory
+    [${sqlite3_CMAKE_${type}_OUTPUT_DIRECTORY}]")
+  endif() 
+
+  if (NOT DEFINED sqlite3_CMAKE_${type}_OUTPUT_DIRECTORY)
+    set(sqlite3_CMAKE_${type}_OUTPUT_DIRECTORY ${sqlite3_BINARY_DIR})
+  endif() 
+  set(CMAKE_${type}_OUTPUT_DIRECTORY ${sqlite3_CMAKE_${type}_OUTPUT_DIRECTOR} CACHE INTERNAL "Single output directory for building all libraries.")
+endforeach()
 
 # add include path for project
 include_directories(${PROJECT_SOURCE_DIR})
 
+message(STATUS "project_source_dir is" ${PROJECT_SOURCE_DIR})
+
+
+#------------------------------------------------------------------------------------------
+# Install headers
+#------------------------------------------------------------------------------------------
 set(SRC_LIB_FILE ${PROJECT_SOURCE_DIR}/sqlite${SQLITE_VER_MAJOR}.c)
 set(SRC_SHELL_FILE ${PROJECT_SOURCE_DIR}/shell.c)
 file(GLOB HDR_FILES ${PROJECT_SOURCE_DIR}/*.h)
 
-if (SQLITE_BUILD_STATIC)
-	# build static library
-	add_library(${SQLITE_STATIC_NAME} STATIC ${SRC_LIB_FILE})
+if(NOT DEFINED ${PROJECT_NAME}_INSTALL_NO_DEVELOPMENT)
+    set(${PROJECT_NAME}_INSTALL_NO_DEVELOPMENT ON)
 endif()
 
-if (SQLITE_BUILD_SHARED)
-	# build dynamic library
-	add_library(${SQLITE_DYN_NAME} SHARED ${SRC_LIB_FILE})
-	if (SQLITE_WIN_BUILD)
-		#then we do dll library, so need to export api
-		set_target_properties(${SQLITE_DYN_NAME} PROPERTIES DEFINE_SYMBOL "SQLITE_API=__declspec(dllexport)")
-	endif()
+if(NOT ${PROJECT_NAME}_INSTALL_NO_DEVELOPMENT)
+  install(
+    FILES ${HDR_FILES} 
+    DESTINATION include/${PROJECT_NAME} COMPONENT Development
+    )
 endif()
+
+add_library(${lib_name} SHARED ${HDR_FILES} ${SRC_LIB_FILE})
+if (WIN_BUILD)
+  set_target_properties(${lib_name} PROPERTIES DEFINE_SYMBOL "SQLITE_API=__declspec(dllexport)")
+endif()
+target_link_libraries(${lib_name} pthread dl)
 
 # build shell executable
-add_executable(shell ${SRC_SHELL_FILE})
-
-if (SQLITE_BUILD_SHARED)
-	# preferred is shared library
-	target_link_libraries(shell ${SQLITE_DYN_NAME})
-elseif(SQLITE_BUILD_STATIC)
-	target_link_libraries(shell ${SQLITE_STATIC_NAME})
-else()
-	# no static or dynamic option selected
-	message(FATAL_ERROR "either static or dynamic option should be selected")
-endif()
+add_executable(shell ${HDR_FILES} ${SRC_SHELL_FILE})
+target_link_libraries(shell ${lib_name} pthread dl)
 
 #
 # Apply user-defined properties to the library target.
 #
-if (SQLITE3_LIBRARY_PROPERTIES)
-  set_target_properties(${lib_name} PROPERTIES ${SQLITE3_LIBRARY_PROPERTIES})
+if (sqlite3_LIBRARY_PROPERTIES)
+  set_target_properties(${lib_name} PROPERTIES ${sqlite3_LIBRARY_PROPERTIES})
 endif()
 
 #
@@ -93,17 +100,23 @@ export(TARGETS ${lib_name} FILE ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Targe
 
 # installation
 list(APPEND TO_INSTALL shell)
-if(SQLITE_BUILD_SHARED)
-    list(APPEND TO_INSTALL ${SQLITE_DYN_NAME})
-endif()
-if(SQLITE_BUILD_STATIC)
-    list(APPEND TO_INSTALL ${SQLITE_STATIC_NAME})
-endif()
+
+set(INSTALL_BIN_DIR ${CMAKE_CURRENT_BINARY_DIR})
+set(INSTALL_LIB_DIR ${CMAKE_CURRENT_BINARY_DIR})
+set(INSTALL_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
 
 install(TARGETS ${TO_INSTALL}
-        RUNTIME DESTINATION "${INSTALL_BIN_DIR}"
-        ARCHIVE DESTINATION "${INSTALL_LIB_DIR}"
-        LIBRARY DESTINATION "${INSTALL_LIB_DIR}" )
+  RUNTIME DESTINATION "${INSTALL_BIN_DIR}"
+  LIBRARY DESTINATION "${INSTALL_LIB_DIR}"
+  ARCHIVE DESTINATION "${INSTALL_LIB_DIR}" 
+)
+
+install(TARGETS ${lib_name}
+  RUNTIME DESTINATION ${INSTALL_BIN_DIR} COMPONENT RuntimeLibraries
+  LIBRARY DESTINATION ${INSTALL_LIB_DIR} COMPONENT RuntimeLibraries
+  ARCHIVE DESTINATION ${INSTALL_LIB_DIR} COMPONENT Development
+  )
+
 install(FILES ${HDR_FILES} DESTINATION "${INSTALL_INC_DIR}")
 
 #install support files
