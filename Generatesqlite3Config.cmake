@@ -2,24 +2,20 @@
 
 # Settings specific to the build tree
 #
-set(SQLITE_INCLUDE_DIR_CONFIG
+set(sqlite3_INCLUDE_DIR_CONFIG
   ${sqlite3_INCLUDE_DIR}
   )
 
-set(SQLITE_LIBRARIES_CONFIG sqlite3)
+set(sqlite3_LIBRARIES_CONFIG sqlite3)
 
-#set(SQLITE3_LIBRARY_DIR_CONFIG
-#  ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}
-#  ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}
-#  )
-
-set(SQLITE_USE_FILE_CONFIG
+set(sqlite3_USE_FILE_CONFIG
   ${sqlite3_BINARY_DIR}/Usesqlite3.cmake
   )
 
 # configure PythonCppApiConfig.cmake for the build tree
 #
 message(STATUS " SOURCE dir" ${sqlite3_SOURCE_DIR})
+message(STATUS " INCLUDE dir" ${sqlite3_INCLUDE_DIR})
 message(STATUS " BINARY dir" ${sqlite3_BINARY_DIR})
 
 configure_file(

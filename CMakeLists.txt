@@ -51,6 +51,8 @@ foreach (type LIBRARY RUNTIME ARCHIVE)
   set(CMAKE_${type}_OUTPUT_DIRECTORY ${sqlite3_CMAKE_${type}_OUTPUT_DIRECTOR} CACHE INTERNAL "Single output directory for building all libraries.")
 endforeach()
 
+set(${PROJECT_NAME}_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR}
+    CACHE INTERNAL "${PROJECT_NAME} include dirs" FORCE)
 # add include path for project
 include_directories(${PROJECT_SOURCE_DIR})
 
