@@ -77,7 +77,7 @@ if(NOT ${PROJECT_NAME}_INSTALL_NO_DEVELOPMENT)
     )
 endif()
 
-add_library(${lib_name} MODULE ${HDR_FILES} ${SRC_LIB_FILE})
+add_library(${lib_name} SHARED ${HDR_FILES} ${SRC_LIB_FILE})
 #add_library(${sharedlib_name} SHARED ${HDR_FILES} ${SRC_LIB_FILE})
 if (WIN_BUILD)
   set_target_properties(${lib_name} PROPERTIES DEFINE_SYMBOL "SQLITE_API=__declspec(dllexport)")
@@ -86,8 +86,8 @@ target_link_libraries(${lib_name} pthread dl)
 #target_link_libraries(${sharedlib_name} pthread dl)
 
 # build shell executable
-#add_executable(shell ${HDR_FILES} ${SRC_SHELL_FILE})
-#target_link_libraries(shell ${sharelib_name} pthread dl)
+add_executable(shell ${HDR_FILES} ${SRC_SHELL_FILE})
+target_link_libraries(shell ${lib_name} pthread dl)
 
 #
 # Apply user-defined properties to the library target.
@@ -103,7 +103,7 @@ set(${PROJECT_NAME}_TARGETS ${lib_name} CACHE INTERNAL "${PROJECT_NAME} targets"
 export(TARGETS ${lib_name} FILE ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Targets.cmake)
 
 # installation
-#list(APPEND TO_INSTALL shell)
+list(APPEND TO_INSTALL shell)
 
 set(INSTALL_BIN_DIR ${CMAKE_CURRENT_BINARY_DIR})
 set(INSTALL_LIB_DIR ${CMAKE_CURRENT_BINARY_DIR})
